@@ -1,0 +1,46 @@
+---
+- hosts: all
+  name: eSchool initialization
+  vars_files:
+    - ../variables.yml
+    - ../.ansible.yml
+  remote_user: "{{ login }}"
+  become: yes
+
+  tasks:
+    - name: Disable service
+      systemd:
+        name: "{{ project_name }}"
+        enabled: no
+        masked: yes
+        state: stopped
+        # sudo pkill -f eschool
+
+    - name: Clone develop
+      git:
+        repo: https://github.com/yurkovskiy/eSchool.git
+        dest: "{{ project_src }}"
+        single_branch: yes
+        version: develop
+        force: yes
+
+    - name: Modify application properties
+      command: |
+        sed -i -r -e 's/(DATASOURCE_URL:jdbc:mysql:\/\/).*(:3306)/\1{{ db_ip }}\2/' \
+          -e 's/(DATASOURCE_USERNAME:).*(\})/\1{{ db_user }}\2/' \
+          -e 's/(DATASOURCE_PASSWORD:).*(\})/\1{{ db_pass }}\2/' \
+          -e 's/(ESCHOOL_APP_HOST:).*(\})/\1{{ app_ip }}\2/' \
+          -e 's/(useSSL=).*(\})/\1{{ use_ssl }}\2/' \
+          {{ project_src }}/src/main/resources/application.properties
+
+    - name: Build app
+      args:
+        chdir: "{{ project_src }}"
+      shell: mvn clean package -DskipTests
+
+    - name: Enable service
+      systemd:
+        name: "{{ project_name }}"
+        enabled: yes
+        masked: no
+        state: started

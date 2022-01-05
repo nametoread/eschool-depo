@@ -1,0 +1,5 @@
+---
+project_name: "eschool"
+project_root: "/opt/{{ project_name }}"
+project_src: "{{ project_root }}/bin" # /usr/share/ | /usr/local/share/
+use_ssl: "true"
