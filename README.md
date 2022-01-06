@@ -35,6 +35,11 @@ project = {
   location = "East US"
   admin    = "azure"
 }
+
+dns = {
+  rg_name   = "<FILL_ME>"
+  zone_name = "<FILL_ME>"
+}
 ```
 
 #### Notes:
@@ -44,6 +49,7 @@ project = {
 - Database password requirements - [docs](https://docs.microsoft.com/en-us/azure/mysql/flexible-server/quickstart-create-server-portal)
   > A new password for the server admin account. It must contain between 8 and 128 characters. It must also contain characters from three of the following categories: English uppercase letters, English lowercase letters, numbers (0 through 9), and non-alphanumeric characters (!, $, #, %, and so on). ()
 - Database SKU's - [docs](https://docs.azure.cn/zh-cn/cli/mysql/flexible-server?view=azure-cli-latest#az_mysql_flexible_server_list_skus)
+- If provided with Azure DNS Zone (resource group & zone name) `A` record is created to link project name subdomain to VM IP
 
 ### ansible/.ansible.yml
 

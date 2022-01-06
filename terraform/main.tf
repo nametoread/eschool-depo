@@ -137,6 +137,17 @@ resource "azurerm_network_interface_security_group_association" "main" {
   network_interface_id      = azurerm_network_interface.main.id
 }
 
+##  Link VM public IP and domain 
+
+resource "azurerm_dns_a_record" "main" {
+  count = var.dns.zone_name != null && var.dns.rg_name != null ? 1 : 0
+  name                = var.project.name
+  zone_name           = var.dns.zone_name
+  resource_group_name = var.dns.rg_name
+  ttl                 = 30
+  records             = ["${azurerm_public_ip.main.ip_address}"]
+}
+
 ## Create SSH key pair
 resource "tls_private_key" "main" {
   algorithm = "RSA"
@@ -218,6 +229,10 @@ resource "local_file" "ans_variables" {
 
 ## Run plays
 resource "null_resource" "ans_provision" {
+  triggers = {
+    vm_id = "${azurerm_linux_virtual_machine.main.virtual_machine_id}"
+  }
+
   provisioner "local-exec" {
     command = "ansible-playbook -i ../ansible/.inventory ../ansible/main.yml"
   }

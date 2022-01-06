@@ -23,3 +23,14 @@ variable "project" {
     admin    = string
   })
 }
+
+variable "dns" {
+  type = object({
+    rg_name   = string
+    zone_name = string
+  })
+  default = {
+    rg_name   = null
+    zone_name = null
+  }
+}
