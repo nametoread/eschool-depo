@@ -5,6 +5,7 @@ variable "az" {
     client_id       = string
     client_secret   = string
   })
+  sensitive = true
 }
 
 variable "mysql" {
@@ -14,6 +15,7 @@ variable "mysql" {
     version     = string
     sku_name    = string
   })
+  sensitive = true
 }
 
 variable "project" {
@@ -40,4 +42,5 @@ variable "ssl" {
     email = string
     pass  = string
   })
+  sensitive = true
 }
