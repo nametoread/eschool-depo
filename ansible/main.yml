@@ -1,6 +1,9 @@
 ---
-- name: Fresh server setup
-  import_playbook: playbooks/1-server-setup.yml
+- name: One
+  import_playbook: playbooks/1-server.yml
 
-- name: eSchool initialization
-  import_playbook: playbooks/2-eschool-init.yml
+- name: Two
+  import_playbook: playbooks/2-env.yml
+
+- name: Three
+  import_playbook: playbooks/3-project.yml

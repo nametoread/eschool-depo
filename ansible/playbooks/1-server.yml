@@ -1,0 +1,55 @@
+---
+- hosts: all
+  name: Server setup
+  vars_files:
+    - ../.ansible.yml
+    - ../variables.yml
+  remote_user: "{{ vm_login }}"
+  become: yes
+
+  tasks:
+    - name: Update all packages
+      community.general.zypper:
+        name: "*"
+        update_cache: yes
+        state: latest
+
+    - name: Check if a reboot is needed
+      stat:
+        path: /boot/do_purge_kernels
+      register: opensuse_reboot_required_file
+
+    - name: Optional reboot
+      reboot:
+        msg: "Reboot initiated by Ansible for kernel updates"
+        connect_timeout: 5
+        reboot_timeout: 300
+        pre_reboot_delay: 0
+        post_reboot_delay: 30
+        test_command: uptime
+      when: opensuse_reboot_required_file.stat.exists == true
+
+    - name: Install ACL
+      community.general.zypper:
+        name: acl
+        state: present
+
+    - name: Install Certbot
+      community.general.zypper:
+        name: certbot
+        state: present
+
+    - name: Install Git
+      community.general.zypper:
+        name: git
+        state: present
+
+    - name: Install OpenJDK
+      community.general.zypper:
+        name: java-1_8_0-openjdk-devel
+        state: present
+
+    - name: Install Maven
+      community.general.zypper:
+        name: maven
+        state: present

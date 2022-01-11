@@ -1,0 +1,119 @@
+---
+- hosts: all
+  name: Environment setup
+  vars_files:
+    - ../.ansible.yml
+    - ../variables.yml
+  remote_user: "{{ vm_login }}"
+  become: yes
+
+  tasks:
+    - name: Create slave group
+      group:
+        name: "{{ project_usergroup }}"
+        state: present
+
+    - name: Create user for webserver
+      user:
+        name: "{{ project_usergroup }}"
+        group: "{{ project_usergroup }}"
+        home: "{{ project_root }}"
+
+    - name: Disable routing on 80 port
+      iptables:
+        table: nat
+        chain: PREROUTING
+        in_interface: eth0
+        protocol: tcp
+        match: tcp
+        destination_port: 80
+        jump: REDIRECT
+        to_ports: "{{ server_port }}"
+        state: absent
+
+    - name: Create SSL certificate
+      command: |
+        certbot certonly --standalone \
+          --agree-tos -n \
+          -d {{ project_domain }} \
+          -m {{ ssl_email }}
+
+    - name: Convert PEM to PKCS12
+      command: |
+        openssl pkcs12 -export \
+          -inkey /etc/letsencrypt/live/{{ project_domain }}/privkey.pem \
+          -in /etc/letsencrypt/live/{{ project_domain }}/fullchain.pem \
+          -out {{ project_root }}/ks.p12 \
+          -password pass:{{ ssl_pass }}
+
+    - name: Create secrets file
+      copy:
+        dest: "{{ project_root }}/.env"
+        owner: "{{ project_usergroup }}"
+        group: "{{ project_usergroup }}"
+        mode: "600"
+        content: |
+          DATASOURCE_URL='{{ db_url }}'
+          DATASOURCE_USERNAME='{{ db_user }}'
+          DATASOURCE_PASSWORD='{{ db_pass }}'
+          ESCHOOL_APP_HOST='{{ vm_ip }}'
+          ESCHOOL_SSL_PASS='{{ ssl_pass }}'
+
+    - name: Create service file
+      copy:
+        dest: "/usr/lib/systemd/system/{{ project_name }}.service"
+        # nohup java -jar *.jar &
+        content: |
+          [Unit]
+          Description=eSchool server
+          Wants=basic.target
+          After=basic.target network.target
+          StartLimitIntervalSec=0
+
+          [Install]
+          WantedBy=multi-user.target
+          Alias={{ project_name }}.service
+
+          [Service]
+          Type=simple
+          Restart=on-failure
+          RestartSec=5s
+          User={{ project_usergroup }}
+          Group={{ project_usergroup }}
+          WorkingDirectory={{ project_src }}/target
+          EnvironmentFile={{ project_root }}/.env
+          ExecStart=/usr/bin/java -jar {{ project_src }}/target/eschool.jar
+          SuccessExitStatus=143
+
+    - name: Reload systemctl daemon
+      systemd:
+        daemon_reload: yes
+
+    - name: Forward port 80 to server port
+      iptables:
+        table: nat
+        chain: PREROUTING
+        in_interface: eth0
+        protocol: tcp
+        match: tcp
+        destination_port: 80
+        jump: REDIRECT
+        to_ports: "{{ server_port }}"
+        comment: Http redirection for eschool
+
+    - name: Forward port 443 to server port
+      iptables:
+        table: nat
+        chain: PREROUTING
+        in_interface: eth0
+        protocol: tcp
+        match: tcp
+        destination_port: 443
+        jump: REDIRECT
+        to_ports: "{{ server_port }}"
+        comment: Https redirection for eschool
+
+    - name: Save iptables config
+      community.general.iptables_state:
+        state: saved
+        path: /etc/sysconfig/iptables

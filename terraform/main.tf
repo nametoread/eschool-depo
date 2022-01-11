@@ -105,13 +105,25 @@ resource "azurerm_network_security_group" "main" {
   }
 
   security_rule {
-    name                       = "HTTP8080"
+    name                       = "HTTP-80"
     priority                   = 1002
     direction                  = "Inbound"
     access                     = "Allow"
     protocol                   = "Tcp"
     source_port_range          = "*"
-    destination_port_range     = "8080"
+    destination_port_range     = "80"
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
+
+  security_rule {
+    name                       = "HTTPS-443"
+    priority                   = 1003
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "443"
     source_address_prefix      = "*"
     destination_address_prefix = "*"
   }
@@ -137,10 +149,15 @@ resource "azurerm_network_interface_security_group_association" "main" {
   network_interface_id      = azurerm_network_interface.main.id
 }
 
-##  Link VM public IP and domain 
+## Link VM public IP and domain 
+
+locals {
+  custom_domain = var.dns.zone_name != null && var.dns.rg_name != null ? 1 : 0
+}
 
 resource "azurerm_dns_a_record" "main" {
-  count = var.dns.zone_name != null && var.dns.rg_name != null ? 1 : 0
+  count = local.custom_domain
+
   name                = var.project.name
   zone_name           = var.dns.zone_name
   resource_group_name = var.dns.rg_name
@@ -212,11 +229,15 @@ resource "local_file" "ans_inventory" {
 locals {
   ans_creds = sensitive(
     yamlencode({
-      login : "${var.project.admin}",
-      db_ip : "${azurerm_mysql_flexible_server.main.name}.${azurerm_private_dns_zone.main.name}",
+      project_name : "${var.project.name}",
+      project_domain : "${var.project.name}.${var.dns.zone_name}",
+      vm_login : "${var.project.admin}",
+      vm_ip : "${azurerm_public_ip.main.ip_address}",
+      db_url : "jdbc:mysql://${azurerm_mysql_flexible_server.main.name}.${azurerm_private_dns_zone.main.name}:3306/${var.project.name}?useSSL=true&useUnicode=true&characterEncoding=utf8&createDatabaseIfNotExist=true&autoReconnect=true",
       db_user : "${var.mysql.admin_login}",
       db_pass : "${var.mysql.admin_pass}",
-      app_ip : "${azurerm_public_ip.main.ip_address}",
+      ssl_email : "${var.ssl.email}",
+      ssl_pass : "${var.ssl.pass}"
     })
   )
 }
@@ -224,20 +245,5 @@ locals {
 ## Store sensitive variables
 resource "local_file" "ans_variables" {
   filename          = "../ansible/.ansible.yml"
-  sensitive_content = join("\n", ["---", "${local.ans_creds}"])
-}
-
-## Run plays
-resource "null_resource" "ans_provision" {
-  triggers = {
-    vm_id = "${azurerm_linux_virtual_machine.main.virtual_machine_id}"
-  }
-
-  provisioner "local-exec" {
-    command = "ansible-playbook -i ../ansible/.inventory ../ansible/main.yml"
-  }
-
-  depends_on = [
-    local_file.ans_inventory, local_file.ans_variables
-  ]
+  sensitive_content = join("\n", ["---", "# Auto-generated. Do not edit", "${local.ans_creds}"])
 }

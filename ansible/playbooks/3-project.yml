@@ -1,0 +1,55 @@
+---
+- hosts: all
+  name: Project setup
+  vars_files:
+    - ../.ansible.yml
+    - ../variables.yml
+  remote_user: "{{ vm_login }}"
+  become: yes
+
+  tasks:
+    - name: Disable service
+      systemd:
+        name: "{{ project_name }}"
+        enabled: no
+        state: stopped
+        # sudo pkill -f eschool
+
+    - name: Clone dev branch
+      git:
+        repo: https://github.com/yurkovskiy/eSchool.git
+        dest: "{{ project_src }}"
+        single_branch: yes
+        version: develop
+        force: yes
+
+    - name: Change project directory ownership
+      file:
+        dest: "{{ project_root }}"
+        owner: "{{ project_usergroup }}"
+        group: "{{ project_usergroup }}"
+        state: directory
+        recurse: yes
+
+    - name: Append server properties
+      blockinfile:
+        path: "{{ project_src }}/src/main/resources/application.properties"
+        block: |
+          server.port={{ server_port }}
+          server.ssl.enabled={{ server_ssl_enabled }}
+          server.ssl.key-store-type=PKCS12
+          server.ssl.key-store={{ project_root }}/ks.p12
+          server.ssl.key-store-password=${ESCHOOL_SSL_PASS:null}
+
+    - name: Build app
+      become: yes
+      become_user: "{{ project_usergroup }}"
+      args:
+        chdir: "{{ project_src }}"
+      shell: mvn clean package -DskipTests
+
+    - name: Enable service
+      systemd:
+        name: "{{ project_name }}"
+        enabled: yes
+        state: started

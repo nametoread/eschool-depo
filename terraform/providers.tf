@@ -11,16 +11,6 @@ terraform {
       source  = "hashicorp/random"
       version = "~> 3.1"
     }
-
-    # namecheap = {
-    #   source  = "namecheap/namecheap"
-    #   version = "~> 2.0"
-    # }
-
-    # acme = {
-    #   source  = "vancluever/acme"
-    #   version = "~> 2.7"
-    # }
   }
 }
 
@@ -32,7 +22,3 @@ provider "azurerm" {
   client_id       = var.az.client_id
   client_secret   = var.az.client_secret
 }
-
-# provider "acme" {
-#   server_url = "https://acme-v02.api.letsencrypt.org/directory"
-# }

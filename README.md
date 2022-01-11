@@ -1,15 +1,34 @@
 # eSchool Depo
 
-Terraform & Ansible scripts to create infrastructure, setup server, build app and run as service.
+eSchool project 1-click install.
 
 ## Usage
 
+### Installation
+
 0. Install **Terraform** and **Ansible**
-1. Create config files
-2. Run (from `terraform` directory):
-   ```bash
-   $ terraform init && terraform apply
-   ```
+1. Create config files (see below)
+2. Run `$ make magic`
+
+_Notes:_
+
+- Usually whole process takes around 15 minutes to complete.
+
+### Additional commands
+
+- `$ make deploy` - create infrastructure
+- `$ make wipe` - delete infrastructure
+- `$ make provision` - make provision (full)
+- `$ make configure` - configure remote environment (only)
+- `$ make update` - create/update app (only)
+
+## Features
+
+- Configurable end-to-end automation
+- Custom domain (via **Azure DNS**)
+- SSL generation (via **certbot**)
+- Lightweight (redirection from :80 and :443 via **iptables**)
+- Secure (maybe?)
 
 ## Config files (examples)
 
@@ -40,9 +59,14 @@ dns = {
   rg_name   = "<FILL_ME>"
   zone_name = "<FILL_ME>"
 }
+
+ssl = {
+  email = "<FILL_ME>"
+  pass  = "<FILL_ME>"
+}
 ```
 
-#### Notes:
+_Notes:_
 
 - For `az` object create service principal - [docs](https://docs.microsoft.com/en-us/azure/developer/terraform/get-started-cloud-shell-bash?tabs=bash#create-a-service-principal)
 
@@ -53,16 +77,12 @@ dns = {
 
 ### ansible/.ansible.yml
 
-Generated automatically after complete and successful `terraform apply`.
+Generated automatically after complete and successful infrastructure deployment.
 
 ## Misc
 
 - Generated SSH pair stored in `.ssh/` folder. Private `.key` and public `.pem` keys named after `project.name` in `terraform.tfvars`
-- Check `vm_public_ip:8080`
-- Also, you can rebuild app (from `ansible` directory) with:
-  ```bash
-  $ ansible-playbook -i .inventory playbooks/2-eschool-init.yml
-  ```
+- See output of terraform for Web / MySQL / SSH connection strings
 
 ## License
 

@@ -34,3 +34,10 @@ variable "dns" {
     zone_name = null
   }
 }
+
+variable "ssl" {
+  type = object({
+    email = string
+    pass  = string
+  })
+}
