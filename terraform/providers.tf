@@ -4,7 +4,7 @@ terraform {
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "~> 2.90"
+      version = "~> 2.91"
     }
 
     random = {
@@ -15,10 +15,10 @@ terraform {
 }
 
 provider "azurerm" {
-  features {}
-
-  subscription_id = var.az.subscription_id
-  tenant_id       = var.az.tenant_id
-  client_id       = var.az.client_id
-  client_secret   = var.az.client_secret
+  features {
+    key_vault {
+      recover_soft_deleted_key_vaults = var.azure.features.key_vault.recover_soft_deleted_key_vaults
+      purge_soft_delete_on_destroy    = var.azure.features.key_vault.purge_soft_delete_on_destroy
+    }
+  }
 }

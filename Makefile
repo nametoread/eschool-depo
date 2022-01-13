@@ -1,7 +1,6 @@
-magic: deploy provision
-
 deploy:
 	cd terraform; \
+	. ./.env; \
 	terraform fmt -recursive; \
 	terraform init; \
 	terraform apply; \
@@ -12,9 +11,20 @@ wipe:
 	terraform destroy; \
 	cd ..
 
+bully:
+	cd terraform; \
+	rm -rf .terraform; \
+	rm terraform.tfstat* .terraform.lock.hcl; \
+	cd ..
+
 provision:
 	cd ansible; \
 	ansible-playbook -i .inventory main.yml; \
+	cd ..
+
+setup:
+	cd ansible; \
+	ansible-playbook -i .inventory playbooks/1-server.yml; \
 	cd ..
 
 configure:

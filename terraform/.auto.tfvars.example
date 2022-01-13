@@ -1,0 +1,83 @@
+azure = {
+  features = {
+    key_vault = {
+      recover_soft_deleted_key_vaults = false
+      purge_soft_delete_on_destroy    = true
+    }
+  }
+}
+
+project = {
+  name           = "eschool"
+  location       = "East US"
+  admin_username = "azure"
+}
+
+vault = {
+  sku_name                        = "standard" # premium
+  enabled_for_deployment          = true
+  enabled_for_disk_encryption     = true
+  enabled_for_template_deployment = true
+  soft_delete_retention_days      = 7
+  purge_protection_enabled        = false
+  access_policies = {
+    god = {
+      certificate_permissions = [
+        "Backup", "Create", "Delete", "DeleteIssuers", "Get", "GetIssuers", "Import", "List", "ListIssuers", "ManageContacts", "ManageIssuers", "Purge", "Recover", "Restore", "SetIssuers", "Update",
+      ]
+      key_permissions = [
+        "Backup", "Create", "Decrypt", "Delete", "Encrypt", "Get", "Import", "List", "Purge", "Recover", "Restore", "Sign", "UnwrapKey", "Update", "Verify", "WrapKey",
+      ]
+      secret_permissions = [
+        "Backup", "Delete", "Get", "List", "Purge", "Recover", "Restore", "Set",
+      ]
+      storage_permissions = [
+        "Backup", "Delete", "DeleteSAS", "Get", "GetSAS", "List", "ListSAS", "Purge", "Recover", "RegenerateKey", "Restore", "Set", "SetSAS", "Update",
+      ]
+    }
+  }
+}
+
+mysql = {
+  sku_name = "B_Standard_B1ms" # "B_Gen5_2"
+  version  = "8.0.21"
+}
+
+vm = {
+  size         = "Standard_B2s"
+  storage_type = "Premium_LRS"
+
+  image = {
+    publisher = "SUSE"
+    offer     = "opensuse-leap-15-3"
+    sku       = "gen2"
+    version   = "latest"
+  }
+
+  rules = {
+    "ssh" = {
+      name             = "SSH-22"
+      priority         = 1001
+      destination_port = "22"
+    },
+
+    "http" = {
+      name             = "HTTP-80"
+      priority         = 1002
+      destination_port = "80"
+    },
+
+    "https" = {
+      name             = "HTTPS-443"
+      priority         = 1003
+      destination_port = "443"
+    }
+  }
+}
+
+dns = {
+  zone_name   = "example.com"
+  rgroup_name = "resource-group-name"
+}
+
+generate_ansible_files = true

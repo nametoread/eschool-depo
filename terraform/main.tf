@@ -1,249 +1,75 @@
-# General block
+module "common" {
+  source = "./modules/common"
 
-## Create resource group
-resource "azurerm_resource_group" "main" {
-  name     = "${var.project.name}-resources"
+  name     = var.project.name
   location = var.project.location
 }
 
-## Create virtual network
-resource "azurerm_virtual_network" "main" {
-  name                = "${var.project.name}-network"
-  address_space       = ["10.0.0.0/16"]
-  location            = azurerm_resource_group.main.location
-  resource_group_name = azurerm_resource_group.main.name
+module "vault" {
+  source = "./modules/vault"
+
+  name   = var.project.name
+  rgroup = module.common.rgroup
+
+  cfg = var.vault
 }
 
-# Database block
+module "database" {
+  source = "./modules/database"
 
-## Create subnet for database
-resource "azurerm_subnet" "database" {
-  name                 = "${var.project.name}-database"
-  resource_group_name  = azurerm_resource_group.main.name
-  virtual_network_name = azurerm_virtual_network.main.name
-  address_prefixes     = ["10.0.2.0/24"]
+  name   = var.project.name
+  rgroup = module.common.rgroup
+  vnet   = module.common.vnet
 
-  service_endpoints = ["Microsoft.Storage"]
-  delegation {
-    name = "dfs"
-    service_delegation {
-      name = "Microsoft.DBforMySQL/flexibleServers"
-      actions = [
-        "Microsoft.Network/virtualNetworks/subnets/join/action",
-      ]
-    }
+  cfg = var.mysql
+  creds = {
+    admin_username = var.project.admin_username
+    admin_password = module.vault.database_password
   }
 }
 
-## Create private DNS zone
-resource "azurerm_private_dns_zone" "main" {
-  name                = "${var.project.name}-db.mysql.database.azure.com"
-  resource_group_name = azurerm_resource_group.main.name
-}
+module "vm" {
+  source = "./modules/vm"
 
-## Link DNS zone to virtual network
-resource "azurerm_private_dns_zone_virtual_network_link" "main" {
-  name                  = "mysql-link"
-  private_dns_zone_name = azurerm_private_dns_zone.main.name
-  virtual_network_id    = azurerm_virtual_network.main.id
-  resource_group_name   = azurerm_resource_group.main.name
-}
+  name   = var.project.name
+  rgroup = module.common.rgroup
+  vnet   = module.common.vnet
 
-resource "random_pet" "db_suffix" {
-  length = 2
-}
-
-## Create MySQL server
-resource "azurerm_mysql_flexible_server" "main" {
-  name                   = random_pet.db_suffix.id
-  resource_group_name    = azurerm_resource_group.main.name
-  location               = azurerm_resource_group.main.location
-  delegated_subnet_id    = azurerm_subnet.database.id
-  private_dns_zone_id    = azurerm_private_dns_zone.main.id
-  administrator_login    = var.mysql.admin_login
-  administrator_password = var.mysql.admin_pass
-  sku_name               = var.mysql.sku_name
-  version                = var.mysql.version
-
-  depends_on = [azurerm_private_dns_zone_virtual_network_link.main]
-}
-
-# VM block
-
-## Create subnet for virtual machine
-resource "azurerm_subnet" "internal" {
-  name                 = "${var.project.name}-internal"
-  resource_group_name  = azurerm_resource_group.main.name
-  virtual_network_name = azurerm_virtual_network.main.name
-  address_prefixes     = ["10.0.1.0/24"]
-}
-
-## Create VM public IP
-resource "azurerm_public_ip" "main" {
-  name                = "${var.project.name}-main-ip"
-  location            = azurerm_resource_group.main.location
-  resource_group_name = azurerm_resource_group.main.name
-  allocation_method   = "Static"
-}
-
-## Create network security group
-resource "azurerm_network_security_group" "main" {
-  name                = "${var.project.name}-nsg"
-  location            = azurerm_resource_group.main.location
-  resource_group_name = azurerm_resource_group.main.name
-
-  security_rule {
-    name                       = "SSH"
-    priority                   = 1001
-    direction                  = "Inbound"
-    access                     = "Allow"
-    protocol                   = "Tcp"
-    source_port_range          = "*"
-    destination_port_range     = "22"
-    source_address_prefix      = "*"
-    destination_address_prefix = "*"
-  }
-
-  security_rule {
-    name                       = "HTTP-80"
-    priority                   = 1002
-    direction                  = "Inbound"
-    access                     = "Allow"
-    protocol                   = "Tcp"
-    source_port_range          = "*"
-    destination_port_range     = "80"
-    source_address_prefix      = "*"
-    destination_address_prefix = "*"
-  }
-
-  security_rule {
-    name                       = "HTTPS-443"
-    priority                   = 1003
-    direction                  = "Inbound"
-    access                     = "Allow"
-    protocol                   = "Tcp"
-    source_port_range          = "*"
-    destination_port_range     = "443"
-    source_address_prefix      = "*"
-    destination_address_prefix = "*"
+  cfg = var.vm
+  creds = {
+    admin_username = var.project.admin_username
+    public_key     = module.vault.master_public_key_openssh
   }
 }
 
-## Create network interface
-resource "azurerm_network_interface" "main" {
-  name                = "${var.project.name}-nic"
-  location            = azurerm_resource_group.main.location
-  resource_group_name = azurerm_resource_group.main.name
+module "dns" {
+  source = "./modules/dns"
 
-  ip_configuration {
-    name                          = "internal"
-    subnet_id                     = azurerm_subnet.internal.id
-    private_ip_address_allocation = "Dynamic"
-    public_ip_address_id          = azurerm_public_ip.main.id
-  }
+  name        = var.project.name
+  zone_name   = var.dns.zone_name
+  rgroup_name = var.dns.rgroup_name
+  ip          = module.vm.public_ip
 }
 
-## Connect NSG to NIC
-resource "azurerm_network_interface_security_group_association" "main" {
-  network_security_group_id = azurerm_network_security_group.main.id
-  network_interface_id      = azurerm_network_interface.main.id
-}
+module "provision" {
+  count  = var.generate_ansible_files ? 1 : 0
+  source = "./modules/provision"
 
-## Link VM public IP and domain 
-
-locals {
-  custom_domain = var.dns.zone_name != null && var.dns.rg_name != null ? 1 : 0
-}
-
-resource "azurerm_dns_a_record" "main" {
-  count = local.custom_domain
-
-  name                = var.project.name
-  zone_name           = var.dns.zone_name
-  resource_group_name = var.dns.rg_name
-  ttl                 = 30
-  records             = ["${azurerm_public_ip.main.ip_address}"]
-}
-
-## Create SSH key pair
-resource "tls_private_key" "main" {
-  algorithm = "RSA"
-  rsa_bits  = 4096
-}
-
-resource "local_file" "local_pem" {
-  # filename             = pathexpand("~/.ssh/${var.project.name}.pem")
-  filename             = "../.ssh/${var.project.name}.pem"
-  directory_permission = "0700"
-  file_permission      = "0644"
-  content              = tls_private_key.main.public_key_pem
-}
-
-resource "local_file" "local_key" {
-  # filename             = pathexpand("~/.ssh/${var.project.name}.key")
-  filename             = "../.ssh/${var.project.name}.key"
-  directory_permission = "0700"
-  file_permission      = "0600"
-  sensitive_content    = tls_private_key.main.private_key_pem
-}
-
-## Create VM
-resource "azurerm_linux_virtual_machine" "main" {
-  name                  = "${var.project.name}-vm"
-  location              = azurerm_resource_group.main.location
-  resource_group_name   = azurerm_resource_group.main.name
-  network_interface_ids = [azurerm_network_interface.main.id]
-  size                  = "Standard_B2s"
-
-  os_disk {
-    name                 = "${var.project.name}-os-disk"
-    storage_account_type = "Premium_LRS"
-    caching              = "ReadWrite"
+  project = {
+    name   = var.project.name
+    domain = module.dns.fqdn
   }
 
-  source_image_reference {
-    publisher = "SUSE"               # "Debian"
-    offer     = "opensuse-leap-15-3" # "debian-11"
-    sku       = "gen2"               # "11-gen2"
-    version   = "latest"
+  database = {
+    fqdn     = module.database.fqdn
+    username = var.project.admin_username
+    password = module.vault.database_password
   }
 
-  computer_name                   = "${var.project.name}-vm"
-  admin_username                  = var.project.admin
-  disable_password_authentication = true
-
-  admin_ssh_key {
-    username   = var.project.admin
-    public_key = tls_private_key.main.public_key_openssh
+  vm = {
+    username    = var.project.admin_username
+    ip          = module.vm.public_ip
+    public_key  = module.vault.master_public_key_pem
+    private_key = module.vault.master_private_key
   }
-}
-
-# Ansible block
-
-## Create inventory
-resource "local_file" "ans_inventory" {
-  filename = "../ansible/.inventory"
-  content  = "${azurerm_public_ip.main.ip_address} ansible_ssh_private_key_file=../.ssh/${var.project.name}.key"
-}
-
-locals {
-  ans_creds = sensitive(
-    yamlencode({
-      project_name : "${var.project.name}",
-      project_domain : "${var.project.name}.${var.dns.zone_name}",
-      vm_login : "${var.project.admin}",
-      vm_ip : "${azurerm_public_ip.main.ip_address}",
-      db_url : "jdbc:mysql://${azurerm_mysql_flexible_server.main.name}.${azurerm_private_dns_zone.main.name}:3306/${var.project.name}?useSSL=true&useUnicode=true&characterEncoding=utf8&createDatabaseIfNotExist=true&autoReconnect=true",
-      db_user : "${var.mysql.admin_login}",
-      db_pass : "${var.mysql.admin_pass}",
-      ssl_email : "${var.ssl.email}",
-      ssl_pass : "${var.ssl.pass}"
-    })
-  )
-}
-
-## Store sensitive variables
-resource "local_file" "ans_variables" {
-  filename          = "../ansible/.ansible.yml"
-  sensitive_content = join("\n", ["---", "# Auto-generated. Do not edit", "${local.ans_creds}"])
 }
