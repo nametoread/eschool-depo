@@ -9,9 +9,8 @@ So far _the easiest_ eSchool project deployment.
 3. Create config files
    - `terraform/.env` - Azure authentification credentials
    - `terraform/.auto.tfvars` - deployment configuration
-4. Run `$ make deploy`
-5. Edit fill in fields for SSL in `ansible/.ansible.yml` file
-6. Run `$ make provision`
+   - `ansible/variables/.ssl.yml` - SSL configuration
+4. Run `$ make magic`
 
 ## Features
 

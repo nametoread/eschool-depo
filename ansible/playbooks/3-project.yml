@@ -2,8 +2,8 @@
 - hosts: all
   name: Project setup
   vars_files:
-    - ../.ansible.yml
-    - ../variables.yml
+    - ../variables/main.yml
+    - ../variables/.creds.yml
   remote_user: "{{ vm_login }}"
   become: yes
 

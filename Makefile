@@ -1,3 +1,5 @@
+magic: deploy provision
+
 deploy:
 	cd terraform; \
 	. ./.env; \

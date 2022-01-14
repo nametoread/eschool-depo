@@ -27,13 +27,11 @@ locals {
       "db_url" : "jdbc:mysql://${var.database.fqdn}:3306/${var.project.name}?useSSL=true&useUnicode=true&characterEncoding=utf8&createDatabaseIfNotExist=true&autoReconnect=true",
       "db_user" : "${var.database.username}",
       "db_pass" : "${var.database.password}",
-      "ssl_email" : "<CHANGE_ME>",
-      "ssl_pass" : "<CHANGE_ME>"
     })
   )
 }
 
 resource "local_file" "ansible_creds" {
-  filename          = "${path.cwd}/../ansible/.ansible.yml"
+  filename          = "${path.cwd}/../ansible/variables/.creds.yml"
   sensitive_content = join("\n", ["---", "# Auto-generated. Edit with caution.", local.entries])
 }

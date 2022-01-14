@@ -26,29 +26,28 @@ resource "tls_private_key" "master" {
   rsa_bits  = 4096
 }
 
-resource "azurerm_key_vault_secret" "master_key_private_b64" {
-  name  = "master-key-private-b64"
-  value = base64encode(tls_private_key.master.private_key_pem)
-
-  key_vault_id = azurerm_key_vault.main.id
-  depends_on = [
-    azurerm_key_vault_access_policy.god
-  ]
+locals {
+  secrets = {
+    master_key_private_b64 = {
+      name  = "master-key-private-b64"
+      value = base64encode(tls_private_key.master.private_key_pem)
+    }
+    master_key_public_pem_b64 = {
+      name  = "master-key-public-pem-b64"
+      value = base64encode(tls_private_key.master.public_key_pem)
+    }
+    master_key_public_openssh_b64 = {
+      name  = "master-key-public-openssh-b64"
+      value = base64encode(tls_private_key.master.public_key_openssh)
+    }
+  }
 }
 
-resource "azurerm_key_vault_secret" "master_key_public_pem_b64" {
-  name  = "master-key-public-pem-b64"
-  value = base64encode(tls_private_key.master.public_key_pem)
+resource "azurerm_key_vault_secret" "secrets" {
+  for_each = local.secrets
 
-  key_vault_id = azurerm_key_vault.main.id
-  depends_on = [
-    azurerm_key_vault_access_policy.god
-  ]
-}
-
-resource "azurerm_key_vault_secret" "master_key_public_openssh_b64" {
-  name  = "master-key-public-openssh-b64"
-  value = base64encode(tls_private_key.master.public_key_openssh)
+  name  = each.value.name
+  value = each.value.value
 
   key_vault_id = azurerm_key_vault.main.id
   depends_on = [
