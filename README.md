@@ -4,7 +4,7 @@ So far _the easiest_ eSchool project deployment.
 
 ## Usage
 
-1. Install **Terraform** and **Ansible**
+1. Install **Terraform**, **Ansible** (core + _community.general_ collection) and **Azure CLI**
 2. Clone this repository
 3. Create config files
    - `terraform/.env` - Azure authentification credentials
@@ -14,7 +14,7 @@ So far _the easiest_ eSchool project deployment.
 
 ## Features
 
-- Both creation of infrastructure and provisioning
+- Both creation of infrastructure and provisioning (under 15 minutes)
 - Comprehensive configuration
 - **Terraform**-specific:
   - Modular structure
@@ -37,7 +37,7 @@ So far _the easiest_ eSchool project deployment.
 - For additional single task commands see `Makefile`
 - In case of setting variable **generate_ansible_files** to `true` generated SSH pair is stored in `.ssh/` folder. Private `.key` and public `.pem` keys named after `project.name` in `.auto.tfvars`
 - Some parts of Ansible scripts (e.g. system update) are **openSUSE**-specific
-- See **output** of terraform for Web / Database / SSH connect strings
+- See Terraform **outputs** for Web / Database / SSH connect strings
 
 ## License
 

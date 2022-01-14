@@ -10,6 +10,7 @@ deploy:
 
 wipe:
 	cd terraform; \
+	. ./.env; \
 	terraform destroy; \
 	cd ..
 
