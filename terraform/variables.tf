@@ -6,6 +6,7 @@ variable "azure" {
         purge_soft_delete_on_destroy    = bool
       })
     })
+    subscription_id = string
   })
 }
 

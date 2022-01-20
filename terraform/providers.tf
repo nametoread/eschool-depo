@@ -21,4 +21,5 @@ provider "azurerm" {
       purge_soft_delete_on_destroy    = var.azure.features.key_vault.purge_soft_delete_on_destroy
     }
   }
+  subscription_id = var.azure.subscription_id
 }

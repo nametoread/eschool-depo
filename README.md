@@ -4,13 +4,13 @@ So far _the easiest_ eSchool project deployment.
 
 ## Usage
 
-1. Install **Terraform**, **Ansible** (core + _community.general_ collection) and **Azure CLI**
-2. Clone this repository
-3. Create config files
-   - `terraform/.env` - Azure authentification credentials
+1. Install **Terraform**, **Ansible** (core + _community.general_ collection)
+2. Install **Azure CLI** and log in
+3. Clone this repository
+4. Create config files
    - `terraform/.auto.tfvars` - deployment configuration
    - `ansible/variables/.ssl.yml` - SSL configuration
-4. Run `$ make magic`
+5. Run `$ make magic`
 
 ## Features
 

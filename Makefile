@@ -2,7 +2,6 @@ magic: deploy provision
 
 deploy:
 	cd terraform; \
-	. ./.env; \
 	terraform fmt -recursive; \
 	terraform init; \
 	terraform apply; \
@@ -10,7 +9,6 @@ deploy:
 
 wipe:
 	cd terraform; \
-	. ./.env; \
 	terraform destroy; \
 	cd ..
 
