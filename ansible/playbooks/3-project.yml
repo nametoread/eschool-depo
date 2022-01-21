@@ -31,6 +31,17 @@
         state: directory
         recurse: yes
 
+    - name: Modify application properties
+      replace:
+        path: "{{ project_src }}/src/main/resources/application.properties"
+        regexp: "({(?:{{ item.regexp }}):).*(})"
+        replace: "\\g<1>{{ item.replace }}\\g<2>"
+      loop:
+        - { regexp: "DATASOURCE_URL", replace: "{{ db_url }}" }
+        - { regexp: "DATASOURCE_USERNAME", replace: "{{ db_user }}" }
+        - { regexp: "DATASOURCE_PASSWORD", replace: "{{ db_pass }}" }
+        - { regexp: "ESCHOOL_APP_HOST", replace: "{{ vm_ip }}" }
+
     - name: Append server properties
       blockinfile:
         path: "{{ project_src }}/src/main/resources/application.properties"
@@ -46,7 +57,7 @@
       become_user: "{{ project_usergroup }}"
       args:
         chdir: "{{ project_src }}"
-      shell: mvn clean package -DskipTests
+      shell: mvn clean package #-DskipTests
 
     - name: Enable service
       systemd:
