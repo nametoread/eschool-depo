@@ -1,3 +1,5 @@
+.SILENT: deploy provision
+
 magic: deploy provision
 
 deploy:
