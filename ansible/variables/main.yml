@@ -1,7 +1,11 @@
 ---
-project_root: "/opt/{{ project_name }}"
-project_src: "{{ project_root }}/bin" # /usr/share/ | /usr/local/share/
 project_usergroup: "{{ project_name }}"
+project_home: "/opt/{{ project_usergroup }}"
+project_workdir: "{{ project_home }}/app" # /usr/share/ | /usr/local/share/
+project_source: "{{ project_workdir }}/src"
 
 server_port: "8443"
-server_ssl_enabled: "true"
+ssl_enabled: "true"
+ssl_keystore: "{{ project_workdir }}/ks.p12"
+deploy_key: "{{ project_workdir }}/deploy_key"
+env_file: "{{ project_workdir }}/.env"

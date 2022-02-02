@@ -1,10 +1,11 @@
 ---
 - hosts: all
   name: Environment setup
+  gather_facts: no
   vars_files:
-    - ../variables/main.yml
     - ../variables/.creds.yml
-    - ../variables/.ssl.yml
+    - ../variables/.params.yml
+    - ../variables/main.yml
   remote_user: "{{ vm_login }}"
   become: yes
 
@@ -18,7 +19,40 @@
       user:
         name: "{{ project_usergroup }}"
         group: "{{ project_usergroup }}"
-        home: "{{ project_root }}"
+        home: "{{ project_home }}"
+
+    - name: Create working directory
+      file:
+        state: directory
+        path: "{{ project_workdir }}"
+        owner: "{{ project_usergroup }}"
+        group: "{{ project_usergroup }}"
+
+    - name: Create deploy key
+      copy:
+        src: "{{ local_deploy_key }}"
+        dest: "{{ deploy_key }}"
+        owner: "{{ project_usergroup }}"
+        group: "{{ project_usergroup }}"
+        mode: "600"
+
+    - name: Create secrets file
+      copy:
+        dest: "{{ env_file }}"
+        owner: "{{ project_usergroup }}"
+        group: "{{ project_usergroup }}"
+        mode: "600"
+        content: |
+          ESCHOOL_APP_HOST='{{ vm_ip }}'
+
+          DATASOURCE_URL='{{ db_url }}'
+          DATASOURCE_USERNAME='{{ db_user }}'
+          DATASOURCE_PASSWORD='{{ db_pass }}'
+
+          ESCHOOL_S_SERVER_PORT={{ server_port }}
+          ESCHOOL_S_SSL_ENABLED='{{ ssl_enabled }}'
+          ESCHOOL_S_KEY_STORE='{{ ssl_keystore }}'
+          ESCHOOL_S_SSL_PASS='{{ ssl_pass }}'
 
     - name: Disable routing on 80 port
       iptables:
@@ -44,21 +78,15 @@
         openssl pkcs12 -export \
           -inkey /etc/letsencrypt/live/{{ project_domain }}/privkey.pem \
           -in /etc/letsencrypt/live/{{ project_domain }}/fullchain.pem \
-          -out {{ project_root }}/ks.p12 \
+          -out {{ ssl_keystore }} \
           -password pass:{{ ssl_pass }}
 
-    - name: Create secrets file
-      copy:
-        dest: "{{ project_root }}/.env"
+    - name: Change SSL certificate ownership
+      file:
+        path: "{{ ssl_keystore }}"
         owner: "{{ project_usergroup }}"
         group: "{{ project_usergroup }}"
         mode: "600"
-        content: |
-          DATASOURCE_URL='{{ db_url }}'
-          DATASOURCE_USERNAME='{{ db_user }}'
-          DATASOURCE_PASSWORD='{{ db_pass }}'
-          ESCHOOL_APP_HOST='{{ vm_ip }}'
-          ESCHOOL_SSL_PASS='{{ ssl_pass }}'
 
     - name: Create service file
       copy:
@@ -81,9 +109,9 @@
           RestartSec=5s
           User={{ project_usergroup }}
           Group={{ project_usergroup }}
-          WorkingDirectory={{ project_src }}/target
-          EnvironmentFile={{ project_root }}/.env
-          ExecStart=/usr/bin/java -jar {{ project_src }}/target/eschool.jar
+          WorkingDirectory={{ project_source }}/target
+          EnvironmentFile={{ env_file }}
+          ExecStart=/usr/bin/java -jar {{ project_source }}/target/eschool.jar
           SuccessExitStatus=143
 
     - name: Reload systemctl daemon

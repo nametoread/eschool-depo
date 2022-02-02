@@ -9,7 +9,7 @@ So far _the easiest_ eSchool project deployment.
 3. Clone this repository
 4. Create config files
    - `terraform/.auto.tfvars` - deployment configuration
-   - `ansible/variables/.ssl.yml` - SSL configuration
+   - `ansible/variables/.params.yml` - provisioning configuration
 5. Run `$ make magic`
 
 ## Features
@@ -38,6 +38,7 @@ So far _the easiest_ eSchool project deployment.
 - In case of setting variable **generate_ansible_files** to `true` generated SSH pair is stored in `.ssh/` folder. Private `.key` and public `.pem` keys named after `project.name` in `.auto.tfvars`
 - Some parts of Ansible scripts (e.g. system update) are **openSUSE**-specific
 - See Terraform **outputs** for Web / Database / SSH connect strings
+- In latest versions private repository is used, hence deploy key added to that repo is needed
 
 ## License
 

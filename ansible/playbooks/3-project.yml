@@ -1,9 +1,11 @@
 ---
 - hosts: all
   name: Project setup
+  gather_facts: no
   vars_files:
-    - ../variables/main.yml
     - ../variables/.creds.yml
+    - ../variables/.params.yml
+    - ../variables/main.yml
   remote_user: "{{ vm_login }}"
   become: yes
 
@@ -13,51 +15,26 @@
         name: "{{ project_name }}"
         enabled: no
         state: stopped
-        # sudo pkill -f eschool
 
-    - name: Clone dev branch
+    - name: Clone private repo
+      become: yes
+      become_user: "{{ project_usergroup }}"
       git:
-        repo: https://github.com/yurkovskiy/eSchool.git
-        dest: "{{ project_src }}"
+        repo: "{{ project_repo }}"
+        dest: "{{ project_source }}"
+        version: "{{ project_repo_branch }}"
         single_branch: yes
-        version: develop
-        force: yes
-
-    - name: Change project directory ownership
-      file:
-        dest: "{{ project_root }}"
-        owner: "{{ project_usergroup }}"
-        group: "{{ project_usergroup }}"
-        state: directory
-        recurse: yes
-
-    - name: Modify application properties
-      replace:
-        path: "{{ project_src }}/src/main/resources/application.properties"
-        regexp: "({(?:{{ item.regexp }}):).*(})"
-        replace: "\\g<1>{{ item.replace }}\\g<2>"
-      loop:
-        - { regexp: "DATASOURCE_URL", replace: "{{ db_url }}" }
-        - { regexp: "DATASOURCE_USERNAME", replace: "{{ db_user }}" }
-        - { regexp: "DATASOURCE_PASSWORD", replace: "{{ db_pass }}" }
-        - { regexp: "ESCHOOL_APP_HOST", replace: "{{ vm_ip }}" }
-
-    - name: Append server properties
-      blockinfile:
-        path: "{{ project_src }}/src/main/resources/application.properties"
-        block: |
-          server.port={{ server_port }}
-          server.ssl.enabled={{ server_ssl_enabled }}
-          server.ssl.key-store-type=PKCS12
-          server.ssl.key-store={{ project_root }}/ks.p12
-          server.ssl.key-store-password=${ESCHOOL_SSL_PASS:null}
+        key_file: "{{ deploy_key }}"
+        accept_hostkey: yes
+      environment:
+        GIT_TERMINAL_PROMPT: 0
 
     - name: Build app
       become: yes
       become_user: "{{ project_usergroup }}"
       args:
-        chdir: "{{ project_src }}"
-      shell: mvn clean package #-DskipTests
+        chdir: "{{ project_source }}"
+      shell: source {{ env_file }} && mvn clean package
 
     - name: Enable service
       systemd:

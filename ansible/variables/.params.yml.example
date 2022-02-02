@@ -1,0 +1,6 @@
+---
+ssl_email: "name@example.com"
+ssl_pass: "tuhes"
+local_deploy_key: "/path/to/deploy_key"
+project_repo: "git@github.com:username/repo.git"
+project_repo_branch: "master"

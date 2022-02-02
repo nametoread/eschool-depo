@@ -2,7 +2,6 @@
 - hosts: all
   name: Server setup
   vars_files:
-    - ../variables/main.yml
     - ../variables/.creds.yml
   remote_user: "{{ vm_login }}"
   become: yes
