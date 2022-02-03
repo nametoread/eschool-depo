@@ -1,7 +1,13 @@
+resource "azurerm_dns_zone" "main" {
+  resource_group_name = var.rgroup.name
+  name                = var.domain
+}
+
 resource "azurerm_dns_a_record" "main" {
-  name                = var.name
-  zone_name           = var.zone_name
-  resource_group_name = var.rgroup_name
-  ttl                 = 30
-  records             = [var.ip]
+  resource_group_name = var.rgroup.name
+  zone_name           = azurerm_dns_zone.main.name
+
+  name    = var.record.name
+  records = [var.record.value]
+  ttl     = 30
 }

@@ -66,8 +66,8 @@ variable "vm" {
 
 variable "dns" {
   type = object({
-    zone_name   = string
-    rgroup_name = string
+    root_domain       = string
+    project_subdomain = string
   })
 }
 

@@ -35,10 +35,11 @@ So far _the easiest_ eSchool project deployment.
 ## Notes
 
 - For additional single task commands see `Makefile`
-- In case of setting variable **generate_ansible_files** to `true` generated SSH pair is stored in `.ssh/` folder. Private `.key` and public `.pem` keys named after `project.name` in `.auto.tfvars`
+- In case of setting variable **generate_ansible_files** to `true` generated SSH pair is stored in `.ssh/` folder. Private and public keys named after `project.name` in `.auto.tfvars`
 - Some parts of Ansible scripts (e.g. system update) are **openSUSE**-specific
 - See Terraform **outputs** for Web / Database / SSH connect strings
 - In latest versions private repository is used, hence deploy key added to that repo is needed
+- Also, after first run it is required to point provided root domain to created nameservers
 
 ## License
 

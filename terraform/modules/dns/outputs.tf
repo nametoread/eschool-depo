@@ -1,7 +1,22 @@
+locals {
+  fqdn = substr(
+    azurerm_dns_a_record.main.fqdn,
+    0,
+    length(azurerm_dns_a_record.main.fqdn) - 1
+  )
+}
+
 output "connect_string" {
-  value = "https://${var.name}.${var.zone_name}/"
+  value = format(
+    "https://%s/",
+    local.fqdn
+  )
 }
 
 output "fqdn" {
-  value = "${var.name}.${var.zone_name}"
+  value = local.fqdn
+}
+
+output "nameservers" {
+  value = flatten(azurerm_dns_zone.main.name_servers)
 }

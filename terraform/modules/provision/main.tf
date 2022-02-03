@@ -1,12 +1,12 @@
 resource "local_file" "ssh_public_key" {
-  filename             = "${path.cwd}/../.ssh/${var.project.name}.pem"
+  filename             = "${path.cwd}/../.ssh/${var.project.name}.pub"
   directory_permission = "0700"
   file_permission      = "0644"
   content              = var.vm.public_key
 }
 
 resource "local_file" "ssh_private_key" {
-  filename             = "${path.cwd}/../.ssh/${var.project.name}.key"
+  filename             = "${path.cwd}/../.ssh/${var.project.name}"
   directory_permission = "0700"
   file_permission      = "0600"
   sensitive_content    = var.vm.private_key
@@ -18,7 +18,7 @@ resource "local_file" "ansible_inventory" {
 }
 
 locals {
-  entries = sensitive(
+  creds = sensitive(
     yamlencode({
       "project_name" : "${var.project.name}",
       "project_domain" : "${var.project.domain}",
@@ -33,5 +33,5 @@ locals {
 
 resource "local_file" "ansible_creds" {
   filename          = "${path.cwd}/../ansible/variables/.creds.yml"
-  sensitive_content = join("\n", ["---", "# Auto-generated. Edit with caution.", local.entries])
+  sensitive_content = join("\n", ["---", "# Auto-generated. Edit with caution.", local.creds])
 }

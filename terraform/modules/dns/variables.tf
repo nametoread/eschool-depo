@@ -1,15 +1,16 @@
-variable "name" {
+variable "rgroup" {
+  type = object({
+    name = string
+  })
+}
+
+variable "domain" {
   type = string
 }
 
-variable "zone_name" {
-  type = string
-}
-
-variable "rgroup_name" {
-  type = string
-}
-
-variable "ip" {
-  type = string
+variable "record" {
+  type = object({
+    name  = string
+    value = string
+  })
 }

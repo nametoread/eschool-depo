@@ -9,3 +9,7 @@ output "vm_connect" {
 output "web_connect" {
   value = module.dns.connect_string
 }
+
+output "web_nameservers" {
+  value = module.dns.nameservers
+}

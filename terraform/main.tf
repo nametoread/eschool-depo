@@ -45,10 +45,12 @@ module "vm" {
 module "dns" {
   source = "./modules/dns"
 
-  name        = var.project.name
-  zone_name   = var.dns.zone_name
-  rgroup_name = var.dns.rgroup_name
-  ip          = module.vm.public_ip
+  rgroup = module.common.rgroup
+  domain = var.dns.root_domain
+  record = {
+    name  = var.dns.project_subdomain
+    value = module.vm.public_ip
+  }
 }
 
 module "provision" {

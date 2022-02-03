@@ -3,5 +3,10 @@ output "public_ip" {
 }
 
 output "connect_string" {
-  value = "ssh ${var.creds.admin_username}@${azurerm_public_ip.main.ip_address}"
+  value = format(
+    "ssh %s@%s -i .ssh/%s",
+    var.creds.admin_username,
+    azurerm_public_ip.main.ip_address,
+    var.name
+  )
 }

@@ -77,8 +77,8 @@ vm = {
 }
 
 dns = {
-  zone_name   = "example.com"
-  rgroup_name = "resource-group-name"
+  root_domain       = "example.com"
+  project_subdomain = "www"
 }
 
 generate_ansible_files = true
